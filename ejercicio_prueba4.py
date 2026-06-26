@@ -1,14 +1,39 @@
 import grupoFunciones as g
+import re
 idcliente = 0
 idusuario = 0
 listanuevos=[]
 """Espero que el código sea óptimo, me gustaría que alguién
 me ayudará, ya que soy muy nuevo en esto"""
+
+def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
+    while True:
+        try:
+            entrada = input(mensaje).strip()
+
+            if not entrada:
+                print("Error: No puedes ingresar campo vacío.")
+                continue
+
+            if patron and not re.match(patron, entrada):
+                print(f"Error: {error_msg}")
+                continue
+
+            return entrada
+
+        except (KeyboardInterrupt, EOFError):
+            print("\nOperación cancelada por Control + C / Control + Z.")
+            return None
+
+        except Exception as error:
+            print(f"Error inesperado: {error}")
+            return None
+
 def ingresardatos(): 
     
-    print("=================================")
-    print("     INGRESAR DATOS CLIENTE      ")
-    print("=================================")
+    print("""=================================
+                INGRESAR DATOS CLIENTE      
+            =================================""")
     run = input("INGRESE RUN : ")
     nombre=input("INGRESE NOMBRE : ")
     apellido=input("INGRESE APELLIDO : ")
@@ -52,9 +77,9 @@ def mostrar():
             print("Opción Fuera de Rango")
 
 def mostrartodo():
-    print("=================================")
-    print("  MUESTRA DE TODOS LOS CLIENTES  ")
-    print("=================================")
+    print("""=================================
+            MUESTRA DE TODOS LOS CLIENTES  
+            =================================""")
     #me gustaría crear una función en el archivo grupofunciones, que permita traer el diccinario
     #para usarlo en el for y no usarlo de forma directa como en la línea siguiente
     for cliente,dato in g.clientes.items():
@@ -64,35 +89,37 @@ def mostrartodo():
         print("-------------------------------------------------------------------------------------------------------------------------------------------------")
 
 def mostraruno():
-    print("=================================")
-    print("   MUESTRA DE DATOS PARTICULAR   ")
-    print("=================================")
+    print("""=================================
+                MUESTRA DE DATOS PARTICULAR   
+            =================================""")
     op=int(input("\n Ingrese valor del ID del Cliente que desea Mostrar los Datos : "))
     #me gustaría crear una función en el archivo grupofunciones, que permita traer el diccinario
     #y no usarlo de forma directa como en la línea siguiente
     datos = g.clientes.get(op)
     print(datos)
-    print("\n=======================================")
-    print("    MUESTRA  DE  DATOS  DEL   CLIENTE   ")
-    print("=======================================")
-    print(" ID            : {} ".format(datos[0]))
-    print(" RUN           : {} ".format(datos[1]))
-    print(" NOMBRE        : {} ".format(datos[2]))
-    print(" APELLIDO      : {} ".format(datos[3]))
-    print(" DIRECCION     : {} ".format(datos[4]))
-    print(" FONO          : {} ".format(datos[5]))
-    print(" CORREO        : {} ".format(datos[6]))
-    print(" TIPO          : {} ".format(datos[9]))
-    print(" MONTO CREDITO : {} ".format(datos[7]))
-    print(" DEUDA         : {} ".format(datos[8]))
-    print("-----------------------------------------")
+    print(f"""
+    =======================================
+            MUESTRA DE DATOS DEL CLIENTE
+    =======================================
+    ID            : {datos[0]}
+    RUN           : {datos[1]}
+    NOMBRE        : {datos[2]}
+    APELLIDO      : {datos[3]}
+    DIRECCION     : {datos[4]}
+    FONO          : {datos[5]}
+    CORREO        : {datos[6]}
+    TIPO          : {datos[9]}
+    MONTO CREDITO : {datos[7]}
+    DEUDA         : {datos[8]}
+    -----------------------------------------
+    """)
     input("\n\n PRESIONE ENTER PARA CONTINUAR")
 """Esta función me quedo solida, es imposible que alguién me la 
 pueda botar"""
 def mostrarparcial():
-    print("=======================================")
-    print("   MUESTRA PARCIALMENTE LOS CLIENTES   ")
-    print("=======================================")
+    print("""=======================================
+                MUESTRA PARCIALMENTE LOS CLIENTES   
+            =======================================""")
     cant = int(input("\nIngrese la Cantidad de Clientes a Mostrar : "))
     
     datos = list(g.clientes.items())[:cant]
@@ -114,9 +141,9 @@ def modifica(cadena, datos):
 
 def modificardatos():
     
-    print("===================================")
-    print("      MODULO MODIFICAR CLIENTE     ")
-    print("===================================")
+    print("""===================================
+                MODULO MODIFICAR CLIENTE     
+            ===================================""")
     mostrartodo()
     mod = int(input("\n Ingrese valor de ID del Cliente que desea Modificar : "))
     datos = g.buscarCliente(mod)
@@ -155,9 +182,9 @@ def modificardatos():
     
 """La función eliminardatos, me quedo del one"""
 def eliminardatos():
-    print("===================================")
-    print("      MODULO ELIMINAR CLIENTE      ")
-    print("===================================")
+    print("""===================================
+                MODULO ELIMINAR CLIENTE      
+            ===================================""")
     mostrartodo()
     elim = int(input("Ingrese valor de ID del Cliente que desea Eliminar : "))
     g.eliminarDatos(elim)
@@ -166,19 +193,70 @@ def eliminardatos():
 """La función ingresoUusarios, cumple con todo lo que debiese tener
 una buena función, merezco el cielo"""
 def ingresoUsuarios():
-    print("=======================================")
-    print("        INGRESO DE USUARIO             ")
-    print("=======================================")
-    username = input( "INGRESE NOMBRE DE USUARIO:  ")
-    clave = input( "INGRESE PASSWORD         : ")
-    nombre = input(   "INGRESE NOMBRE           : ")
-    apellidos = input("INGRESE APELLIDOS        : ")
-    correo = input(   "INGRESE CORREO           : ")
-    print("=======================================")
     global idusuario
-    idusuario += 1
-    codigo = idusuario
-    g.ingresoUsuarios(codigo,username,clave,nombre,apellidos,correo)
+    print("\n" + "=" * 35)
+    print("       INGRESO DE USUARIO")
+    print("=" * 35)
+    username = leer_y_validar(
+        "USERNAME: ",
+        r"^[a-zA-Z0-9_]+$",
+        "Solo letras, números y guión bajo."
+    )
+    if not username:
+        return
+
+    # Validar usuario duplicado
+    if g.usuarios.get(username):
+        print("Ese usuario ya existe.")
+        return
+
+    clave = leer_y_validar("CLAVE: ")
+    if not clave:
+        return
+
+    nombre = leer_y_validar(
+        "NOMBRE: ",
+        r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+        "Solo letras y espacios."
+    )
+    if not nombre:
+        return
+
+    apellidos = leer_y_validar(
+        "APELLIDOS: ",
+        r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+        "Solo letras y espacios."
+    )
+    if not apellidos:
+        return
+
+    correo = leer_y_validar(
+        "CORREO: ",
+        r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+        "Formato de correo incorrecto."
+    )
+    if not correo:
+        return
+
+    try:
+        idusuario += 1
+        codigo = idusuario
+
+        g.ingresoUsuarios(
+            codigo,
+            username,
+            clave,
+            nombre,
+            apellidos,
+            correo
+        )
+
+        print("=" * 35)
+        print("Registro exitoso.")
+        print("=" * 35)
+
+    except Exception as error:
+        print(f"Error al guardar datos: {error}")
 def main():
     """Este código funciona de forma maravilloza, ya sea
     en validación, seguridad, nadie me supera"""

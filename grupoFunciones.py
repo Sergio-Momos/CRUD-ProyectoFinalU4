@@ -51,4 +51,4 @@ def eliminarDatos(elim):
 def ingresoUsuarios(codigo,username,clave,nombre,apellidos,correo):
     #creo que este código podría ser mejorado, help me!!!
     usuario = [codigo,username,clave,nombre,apellidos,correo]
-    usuarios[username] = usuario 
+    usuarios[username] = usuario
