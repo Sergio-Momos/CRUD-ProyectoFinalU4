@@ -3,8 +3,6 @@ import re
 idcliente = 0
 idusuario = 0
 listanuevos=[]
-"""Espero que el código sea óptimo, me gustaría que alguién
-me ayudará, ya que soy muy nuevo en esto"""
 
 def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
     while True:
@@ -30,7 +28,6 @@ def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
             return None
 
 def ingresardatos(): 
-    
     print("""=================================
                 INGRESAR DATOS CLIENTE      
             =================================""")
@@ -54,27 +51,37 @@ def ingresardatos():
     idcliente += 1
     codigo = idcliente
     deuda = 0
-    if g.agregarCliente(codigo,run,nombre,apellido,direccion,fono,correo,tipo,monto,deuda):
+    if g.agregar_cliente(codigo,run,nombre,apellido,direccion,fono,correo,tipo,monto,deuda):
         print("INCORPORACIÓN EXITOSA")
     else:
         print("INCORPORACIÓN FALLIDA")
 """El código que hice, se ve filete, es lo mejor de mi vida
 es imposible alguna caída de sistema"""    
+
 def mostrar():
-    while(True):
-        g.menumostrar()
-        op2 = int(input("  INGRESE OPCIÓN : "))
-        if op2 == 1:
-            mostrartodo()
-            input("\n\n PRESIONE ENTER PARA CONTINUAR")
-        elif op2 == 2:
-            mostraruno()
-        elif op2 == 3:
-            mostrarparcial()
-        if op2 == 4:
+    while True:
+        try:
+            g.menumostrar()
+            op2 = int(input("  INGRESE OPCIÓN : "))
+            if op2 == 1:
+                mostrartodo()
+                input("\nPRESIONE ENTER PARA CONTINUAR")
+            elif op2 == 2:
+                mostraruno()
+            elif op2 == 3:
+                mostrarparcial()
+            if op2 == 4:
+                break
+            else:
+                print("\nOpción Fuera de Rango")
+        
+        except ValueError:
+            print("\n Error: Debe ingresar un número entero válido.")
+            input("PRESIONE ENTER PARA INTENTAR DE NUEVO")
+            
+        except (KeyboardInterrupt, EOFError):
+            print("\n Operación cancelada. Saliendo al menú principal...")
             break
-        else:
-            print("Opción Fuera de Rango")
 
 def mostrartodo():
     print("""=================================
@@ -113,7 +120,7 @@ def mostraruno():
     DEUDA         : {datos[8]}
     -----------------------------------------
     """)
-    input("\n\n PRESIONE ENTER PARA CONTINUAR")
+    input("\nPRESIONE ENTER PARA CONTINUAR")
 """Esta función me quedo solida, es imposible que alguién me la 
 pueda botar"""
 def mostrarparcial():
@@ -146,7 +153,7 @@ def modificardatos():
             ===================================""")
     mostrartodo()
     mod = int(input("\n Ingrese valor de ID del Cliente que desea Modificar : "))
-    datos = g.buscarCliente(mod)
+    datos = g.buscar_cliente(mod)
     
     print(" ID         : {} ".format(datos[0]))
     listanuevos.append(datos[0])
@@ -187,12 +194,12 @@ def eliminardatos():
             ===================================""")
     mostrartodo()
     elim = int(input("Ingrese valor de ID del Cliente que desea Eliminar : "))
-    g.eliminarDatos(elim)
+    g.eliminar_datos(elim)
 
 # --------------------------------------
 """La función ingresoUusarios, cumple con todo lo que debiese tener
 una buena función, merezco el cielo"""
-def ingresoUsuarios():
+def ing_usuario():
     global idusuario
     print("\n" + "=" * 35)
     print("       INGRESO DE USUARIO")
@@ -242,7 +249,7 @@ def ingresoUsuarios():
         idusuario += 1
         codigo = idusuario
 
-        g.ingresoUsuarios(
+        g.ingreso_usuarios(
             codigo,
             username,
             clave,
@@ -257,50 +264,59 @@ def ingresoUsuarios():
 
     except Exception as error:
         print(f"Error al guardar datos: {error}")
+
+def menu_principal():
+    while True:
+        g.menuprincipal()
+        op = int(input("INGRESE OPCIÓN: "))
+
+        if op == 1:
+            ingresardatos()
+        elif op == 2:
+            mostrar()
+        elif op == 3:
+            modificardatos()
+        elif op == 4:
+            eliminardatos()
+        elif op == 5:
+            if input("¿Salir? ").lower() == "si":
+                break
+        else:
+            print("Opción fuera de rango")
+
+
+def login():
+    user = input("Ingrese nombre de usuario: ")
+    clave = input("Ingrese password: ")
+
+    usuario = g.usuarios.get(user)
+
+    if not usuario:
+        input("Usuario no registrado. ENTER para volver.")
+        return None
+
+    if usuario[2] != clave:
+        input("Contraseña incorrecta. ENTER para volver.")
+        return None
+
+    return usuario
+
 def main():
     """Este código funciona de forma maravilloza, ya sea
     en validación, seguridad, nadie me supera"""
     while True:
-        g.menuUsuarios()
-        opUsu = int(input("INGRESE OPCIÓN: "))
-
-        if opUsu == 1:
-            user = input("Ingrese nombre de usuario: ")
-            #me gustaría que la clave se almacenará de forma encriptada,
-            #pero no tengo idea de los hashing
-            clave = input("Ingrese password: ")
-            if g.usuarios.get(user):
-                usuario = g.usuarios.get(user)
-                if usuario[2] == clave:
-                    print(f"Bienvenido {usuario[3]} {usuario[4]} - {usuario[2]} - id: {usuario[0]}.")
-                    input("Presiona ENTRAR para ingresar al Menú Principal.")
-                    while True:  # Bucle para el Menú Principal
-                        g.menuprincipal()
-                        op = int(input("INGRESE OPCIÓN: "))
-                        if op == 1:
-                            ingresardatos()
-                        elif op == 2:
-                            mostrar()
-                        elif op == 3:
-                            modificardatos()
-                        elif op == 4:
-                            eliminardatos()
-                        elif op == 5:
-                            opSalir = input("¿DESEA SALIR [SI/NO]: ")
-                            if opSalir.lower() == "si":
-                                break  # Salir del bucle del Menú Principal
-                        else:
-                            print("Opción Fuera de Rango")
-                    break  # Salir del bucle del Menú de Usuarios
-                else:
-                    input("Contraseña incorrecta. Presiona ENTER para volver al Menú de Usuarios.")
-            else:
-                input("Usuario no registrado. Presiona ENTER para volver al Menú de Usuarios.")
-        elif opUsu == 2:
-            ingresoUsuarios()
-        elif opUsu == 3:
-            opSalir = input("¿DESEA SALIR [SI/NO]: ")
-            if opSalir.lower() == "si":
+        g.menu_usuarios()
+        op_usu = int(input("INGRESE OPCIÓN: "))
+        if op_usu == 1:
+            usuario = login()
+            if usuario:
+                print(f"Bienvenido {usuario[3]}")
+                menu_principal()
+        elif op_usu == 2:
+            ing_usuario()
+        elif op_usu == 3:
+            op_salir = input("¿DESEA SALIR [SI/NO]: ")
+            if op_salir.lower() == "si":
                 break
         else:
             print("Opción Fuera de Rango")
