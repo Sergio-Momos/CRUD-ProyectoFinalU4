@@ -1,5 +1,7 @@
 import re
 import grupoFunciones as g
+import pass_validacion as seguridad
+from getpass import getpass
 idusuario = 0
 
 def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
@@ -21,94 +23,80 @@ def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
             print("\nOperación cancelada por Control + C / Control + Z.")
             return None
 
-        except Exception as error:
-            print(f"Error inesperado: {error}")
-            return None
 
 def ing_usuario():
-    global idusuario
-    print("\n" + "=" * 35)
-    print("       INGRESO DE USUARIO")
-    print("=" * 35)
     username = leer_y_validar(
-        "USERNAME: ",
+        "Username: ",
         r"^[a-zA-Z0-9_]+$",
         "Solo letras, números y guión bajo."
     )
+
     if not username:
         return
 
-    # Validar usuario duplicado
-    if g.usuarios.get(username):
-        print("Ese usuario ya existe.")
+    if username in g.usuarios:
+        print("Usuario ya existe.")
         return
 
-    clave = leer_y_validar("CLAVE: ")
-    if not clave:
+    clave_hash = seguridad.validar_contra()
+
+    if not clave_hash:
         return
 
     nombre = leer_y_validar(
-        "NOMBRE: ",
+        "Nombre: ",
         r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
         "Solo letras y espacios."
     )
+
     if not nombre:
         return
 
     apellidos = leer_y_validar(
-        "APELLIDOS: ",
+        "Apellidos: ",
         r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
         "Solo letras y espacios."
     )
+
     if not apellidos:
         return
 
     correo = leer_y_validar(
-        "CORREO: ",
+        "Correo: ",
         r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-        "Formato de correo incorrecto."
+        "Correo inválido."
     )
+
     if not correo:
         return
 
-    try:
-        idusuario += 1
-        codigo = idusuario
-
-        g.ingreso_usuarios(
-            codigo,
-            username,
-            clave,
-            nombre,
-            apellidos,
-            correo
-        )
-
-        print("=" * 35)
-        print("Registro exitoso.")
-        print("=" * 35)
-
-    except Exception as error:
-        print(f"Error al guardar datos: {error}")
-        
-        
-
-
+    codigo = len(g.usuarios) + 1
+    g.ingreso_usuarios(
+        codigo,
+        username,
+        clave_hash,
+        nombre,
+        apellidos,
+        correo
+    )
+    print("Usuario registrado correctamente.")
 
 def login():
-    user = input("Ingrese nombre de usuario: ")
-    clave = input("Ingrese password: ")
-
-    usuario = g.usuarios.get(user)
-
+    username = leer_y_validar("Username: ",
+        r"^[a-zA-Z0-9_]+$",
+        "Solo letras, números y guión bajo.")
+    if not username:
+        return None
+    password = getpass("Contraseña: ")
+    if not password:
+        return None
+    usuario = g.usuarios.get(username)
     if not usuario:
-        input("Usuario no registrado. ENTER para volver.")
+        print("Usuario no existe.")
         return None
-
-    if usuario[2] != clave:
-        input("Contraseña incorrecta. ENTER para volver.")
+    password_hash = seguridad.encriptar_password(password)
+    if usuario["clave"] != password_hash:
+        print("Clave incorrecta.")
         return None
-
+    print("Login exitoso.")
     return usuario
-
-
