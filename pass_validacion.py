@@ -1,6 +1,7 @@
 import re
 import hashlib
 from getpass import getpass
+import secrets
 
 def validar_longitud(password):
     if len(password) > 15:
@@ -32,9 +33,12 @@ def validar_especial(password):
         return "Debe tener un carácter especial."
     return None
 
+def generar_salt():
+    return secrets.token_hex(16)
 
-def encriptar_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+def encriptar_password(password, salt):
+    combinado = password + salt
+    return hashlib.sha256(combinado.encode()).hexdigest()
 
 
 def validar_contra():
@@ -59,4 +63,6 @@ def validar_contra():
                 print(error)
                 break
         else:
-            return encriptar_password(password1)
+            salt = generar_salt()
+            hash_pw = encriptar_password(password1, salt)
+            return hash_pw, salt

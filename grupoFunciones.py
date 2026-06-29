@@ -51,11 +51,12 @@ def modificar_datos(mod,listanuevos):
 def eliminar_datos(elim):
     del clientes[elim] #siento que esto se va a caer, que miedo
 
-def ingreso_usuarios(codigo, username, clave, nombre, apellidos, correo):
+def ingreso_usuarios(codigo, username, clave, salt, nombre, apellidos, correo):
     usuarios[username] = {
         "codigo": codigo,
         "username": username,
         "clave": clave,
+        "salt": salt,
         "nombre": nombre,
         "apellidos": apellidos,
         "correo": correo

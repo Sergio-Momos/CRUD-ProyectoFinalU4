@@ -38,7 +38,7 @@ def ing_usuario():
         print("Usuario ya existe.")
         return
 
-    clave_hash = seguridad.validar_contra()
+    clave_hash, salt = seguridad.validar_contra()
 
     if not clave_hash:
         return
@@ -75,6 +75,7 @@ def ing_usuario():
         codigo,
         username,
         clave_hash,
+        salt,
         nombre,
         apellidos,
         correo
@@ -94,7 +95,8 @@ def login():
     if not usuario:
         print("Usuario no existe.")
         return None
-    password_hash = seguridad.encriptar_password(password)
+    salt = usuario["salt"]
+    password_hash = seguridad.encriptar_password(password, salt)
     if usuario["clave"] != password_hash:
         print("Clave incorrecta.")
         return None
