@@ -12,7 +12,11 @@ def leer_y_validar(mensaje, patron=None, error_msg="Entrada inválida."):
             if not entrada:
                 print("Error: No puedes ingresar campo vacío.")
                 continue
-
+            
+            if len(entrada) > 30:
+                print("Error: El texto no puede superar los 30 caracteres.")
+                continue
+            
             if patron and not re.match(patron, entrada):
                 print(f"Error: {error_msg}")
                 continue
@@ -83,22 +87,22 @@ def ing_usuario():
     print("Usuario registrado correctamente.")
 
 def login():
-    username = leer_y_validar("Username: ",
-        r"^[a-zA-Z0-9_]+$",
-        "Solo letras, números y guión bajo.")
-    if not username:
-        return None
-    password = getpass("Contraseña: ")
-    if not password:
-        return None
-    usuario = g.usuarios.get(username)
-    if not usuario:
-        print("Usuario no existe.")
-        return None
-    salt = usuario["salt"]
-    password_hash = seguridad.encriptar_password(password, salt)
-    if usuario["clave"] != password_hash:
-        print("Clave incorrecta.")
-        return None
-    print("Login exitoso.")
-    return usuario
+    intentos = 0
+    while intentos < 3:
+        username = leer_y_validar("Username: ", r"^[a-zA-Z0-9]+$", "Solo letras, números y guión bajo.")
+        if not username: return None
+
+        password = getpass("Contraseña: ")
+        if not password: return None
+
+        usuario = g.usuarios.get(username)
+        if not usuario or usuario["clave"] != seguridad.encriptar_password(password, usuario["salt"]):
+            print(f"Error: Inicio de sesion fallido. Te quedan {2 - intentos} intentos.")
+            intentos += 1
+            continue
+
+        print("Login exitoso.")
+        return usuario
+
+    print("\n[ERROR]: Has superado el límite de 3 intentos permitidos.")
+    return None

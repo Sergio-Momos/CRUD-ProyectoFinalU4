@@ -51,18 +51,21 @@ def validar_contra():
     ]
 
     while True:
-        password1 = getpass("Ingrese contraseña: ")
-        password2 = getpass("Confirme contraseña: ")
-        if password1 != password2:
-            print("Las contraseñas no coinciden.")
+        try:
+            password1 = getpass("Ingrese contraseña: ")
+            password2 = getpass("Confirme contraseña: ")
+            if password1 != password2:
+                print("Las contraseñas no coinciden.")
+                continue
+            for validar in validaciones:
+                error = validar(password1)
+                if error:
+                    print(error)
+                    break
+            else:
+                salt = generar_salt()
+                hash_pw = encriptar_password(password1, salt)
+                return hash_pw, salt
+        except KeyboardInterrupt, EOFError:
+            print("No use comandos de teclado")
             continue
-
-        for validar in validaciones:
-            error = validar(password1)
-            if error:
-                print(error)
-                break
-        else:
-            salt = generar_salt()
-            hash_pw = encriptar_password(password1, salt)
-            return hash_pw, salt
