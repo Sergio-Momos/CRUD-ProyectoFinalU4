@@ -1,174 +1,458 @@
 import grupoFunciones as g
-
+import re
+import constantes as c
+import validacion_CL as v
 idcliente = 0
 listanuevos=[]
 
+def pausar():
+    input("PRESIONE ENTER PARA CONTINUAR...")
 
-def ing_cliente(): 
-    print("""=================================
-                INGRESAR DATOS CLIENTE      
-            =================================""")
-    run = input("INGRESE RUN : ")
-    nombre=input("INGRESE NOMBRE : ")
-    apellido=input("INGRESE APELLIDO : ")
-    direccion=input("INGRESE DIRECCION : ")
-    fono=input("INGRESE TELEFONO : ")
-    correo=input("INGRESE CORREO : ")
-    tipos = [
-        [101,"Plata"],[102,"Oro"],[103,"Platino"]
-    ]
-    print("--------------------------------------------")
-    for tipo in tipos:
-        print(
-            " CODIGO : {} - {}.".format(tipo[0], tipo[1]))
-    print("--------------------------------------------")
-    tipo = input("Ingrese el codigo del Tipo de Cliente: ")
-    monto=input("INGRESE MONTO CREDITO : ")
-    global idcliente    
+def validar_rut_chileno(rut):
+    try:
+        cuerpo = rut[:-1]
+        digito_verificador = rut[-1].upper()
+        if not cuerpo.isdigit():
+            return False
+
+        if len(cuerpo) < 7 or len(cuerpo) > 8:
+            return False
+
+        suma = sum(
+            int(digito) * (i % 6 + 2)
+            for i, digito in enumerate(reversed(cuerpo))
+        )
+
+        resto = 11 - (suma % 11)
+
+        if resto == 11:
+            dv_esperado = "0"
+        elif resto == 10:
+            dv_esperado = "K"
+        else:
+            dv_esperado = str(resto)
+
+        return digito_verificador == dv_esperado
+
+    except (ValueError, IndexError):
+        return False
+
+def pedir_run():
+    while True:
+        run = v.leer_y_validar(
+            "RUN (Sin puntos ni guion, ej: 12345678K): ",
+            c.PATRON_RUN,
+            "Formato incorrecto."
+        )
+
+        if not v.validar_rut_chileno(run):
+            print("\nRUN inválido.")
+            continue
+
+        run_formateado = f"{run[:-1]}-{run[-1].upper()}"
+
+        if g.run_existe(run_formateado):
+            print("\nEse RUN ya está registrado.")
+            continue
+
+        return run_formateado
+    
+
+def pedir_datos_cliente():
+    return {
+        "nombre": v.leer_y_validar(
+            "INGRESE NOMBRE   : ",
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
+        "apellido": v.leer_y_validar(
+            "INGRESE APELLIDO : ",
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
+        "direccion": v.leer_y_validar("INGRESE DIRECCIÓN: "),
+        "telefono": v.leer_y_validar(
+            "INGRESE TELÉFONO : ",
+            c.PATRON_TELEFONO,
+            c.ERROR_TELEFONO
+        ),
+        "correo": v.leer_y_validar(
+            "INGRESE CORREO   : ",
+            c.PATRON_CORREO,
+            c.ERROR_CORREO
+        )
+    }
+
+def pedir_tipo_cliente():
+    tipos = {
+        101: "Plata",
+        102: "Oro",
+        103: "Platino"
+    }
+
+    print("-" * 44)
+    print(" CODIGOS: 101 - Plata | 102 - Oro | 103 - Platino")
+    print("-" * 44)
+
+    while True:
+        codigo = int(v.leer_y_validar(
+            "Ingrese Código de Tipo: ",
+            c.PATRON_NUMEROS,
+            c.ERROR_NUMEROS
+        ))
+
+        if codigo in tipos:
+            return tipos[codigo]
+
+        print("\nTipo fuera de rango.")
+
+def pedir_monto():
+    monto = v.leer_y_validar(
+        "INGRESE MONTO CRÉDITO: ",
+        c.PATRON_NUMEROS,
+        c.ERROR_NUMEROS
+    )
+    return int(monto)    
+
+def ing_cliente():
+    print("\n" + "=" * 33 + "\n     INGRESAR DATOS CLIENTE\n" + "=" * 33)
+
+    run = pedir_run()
+    datos = pedir_datos_cliente()
+    tipo = pedir_tipo_cliente()
+    monto = pedir_monto()
+
+    global idcliente
     idcliente += 1
-    codigo = idcliente
-    deuda = 0
-    if g.agregar_cliente(codigo,run,nombre,apellido,direccion,fono,correo,tipo,monto,deuda):
-        print("INCORPORACIÓN EXITOSA")
-    else:
-        print("INCORPORACIÓN FALLIDA")
-"""El código que hice, se ve filete, es lo mejor de mi vida
-es imposible alguna caída de sistema"""    
+
+    exito = g.agregar_cliente(
+        idcliente,
+        run,
+        datos["nombre"],
+        datos["apellido"],
+        datos["direccion"],
+        datos["telefono"],
+        datos["correo"],
+        tipo,
+        monto,
+        0
+    )
+
+    print("\n[✔] INCORPORACIÓN EXITOSA [✔]" if exito else "\n[X] INCORPORACIÓN FALLIDA [X]")
+
+    pausar()
+    
 
 def mostrar():
     while True:
-        try:
-            g.menumostrar()
-            op2 = int(input("  INGRESE OPCIÓN : "))
-            if op2 == 1:
-                mostrartodo()
-                input("\nPRESIONE ENTER PARA CONTINUAR")
-            elif op2 == 2:
-                mostraruno()
-            elif op2 == 3:
-                mostrarparcial()
-            if op2 == 4:
-                break
-            else:
-                print("\nOpción Fuera de Rango")
-        
-        except ValueError:
-            print("\n Error: Debe ingresar un número entero válido.")
-            input("PRESIONE ENTER PARA INTENTAR DE NUEVO")
-            
-        except (KeyboardInterrupt, EOFError):
-            print("\n Operación cancelada. Saliendo al menú principal...")
+        g.menumostrar()
+        op2 = int(
+            v.leer_y_validar(
+                "INGRESE OPCIÓN: ",
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        )
+        if op2 == 1:
+            mostrartodo()
+        elif op2 == 2:
+            mostraruno()
+        elif op2 == 3:
+            mostrarparcial()
+        elif op2 == 4:
+            print("\nVolviendo al menú principal...")
             break
+        else:
+            print("\nOpción fuera de rango (1-4)")
+            pausar()
+
 
 def mostrartodo():
     print("""=================================
-            MUESTRA DE TODOS LOS CLIENTES  
-            =================================""")
-    #me gustaría crear una función en el archivo grupofunciones, que permita traer el diccinario
-    #para usarlo en el for y no usarlo de forma directa como en la línea siguiente
-    for cliente,dato in g.clientes.items():
-        print(
-            " ID : {} - RUN : {} - NOMBRE : {} - APELLIDO : {} - DIRECCION : {} - FONO : {} - CORREO : {} - MONTO CRÉDITO : {} - DEUDA : {} - TIPO : {} ".format(
-                cliente, dato[1], dato[2], dato[3], dato[4], dato[5], dato[6] , dato[8], dato[9], dato[7]))
-        print("-------------------------------------------------------------------------------------------------------------------------------------------------")
+MUESTRA DE TODOS LOS CLIENTES
+=================================""")
+    
+    clientes = g.obtener_clientes()
+
+    if not clientes:
+        print("\nNo existen clientes registrados en el sistema todavía.")
+    else:
+        for id_cliente, cliente in clientes.items():
+            print(
+                f"ID: {id_cliente} - "
+                f"RUN: {cliente['run']} - "
+                f"NOMBRE: {cliente['nombre']} - "
+                f"APELLIDO: {cliente['apellido']} - "
+                f"DIRECCIÓN: {cliente['direccion']} - "
+                f"FONO: {cliente['telefono']} - "
+                f"CORREO: {cliente['correo']} - "
+                f"MONTO CRÉDITO: {cliente['monto']} - "
+                f"DEUDA: {cliente['deuda']} - "
+                f"TIPO: {cliente['tipo']}"
+            )
+            print("-" * 150)
+    pausar()
 
 def mostraruno():
     print("""=================================
-                MUESTRA DE DATOS PARTICULAR   
-            =================================""")
-    op=int(input("\n Ingrese valor del ID del Cliente que desea Mostrar los Datos : "))
-    #me gustaría crear una función en el archivo grupofunciones, que permita traer el diccinario
-    #y no usarlo de forma directa como en la línea siguiente
-    datos = g.clientes.get(op)
-    print(datos)
-    print(f"""
-    =======================================
-            MUESTRA DE DATOS DEL CLIENTE
-    =======================================
-    ID            : {datos[0]}
-    RUN           : {datos[1]}
-    NOMBRE        : {datos[2]}
-    APELLIDO      : {datos[3]}
-    DIRECCION     : {datos[4]}
-    FONO          : {datos[5]}
-    CORREO        : {datos[6]}
-    TIPO          : {datos[9]}
-    MONTO CREDITO : {datos[7]}
-    DEUDA         : {datos[8]}
-    -----------------------------------------
-    """)
-    input("\nPRESIONE ENTER PARA CONTINUAR")
-"""Esta función me quedo solida, es imposible que alguién me la 
-pueda botar"""
+            MUESTRA DE DATOS PARTICULAR
+=================================""")
+    
+    op = int(
+        v.leer_y_validar(
+            "\nIngrese el ID del Cliente que desea mostrar: ",
+            c.PATRON_NUMEROS,
+            "El ID debe ser numérico."
+        )
+    )
+
+    datos = g.buscar_cliente(op)
+
+    if datos is None:
+        print("\nError: El ID ingresado no corresponde a ningún cliente registrado.")
+    else:
+        print(f"""
+=======================================
+MUESTRA DE DATOS DEL CLIENTE
+=======================================
+ID            : {datos["id"]}
+RUN           : {datos["run"]}
+NOMBRE        : {datos["nombre"]}
+APELLIDO      : {datos["apellido"]}
+DIRECCION     : {datos["direccion"]}
+FONO          : {datos["telefono"]}
+CORREO        : {datos["correo"]}
+TIPO          : {datos["tipo"]}
+MONTO CREDITO : {datos["monto"]}
+DEUDA         : {datos["deuda"]}
+---------------------------------------
+""")
+
+    input("\n PRESIONE ENTER PARA CONTINUAR...")
+
 def mostrarparcial():
     print("""=======================================
-                MUESTRA PARCIALMENTE LOS CLIENTES   
-            =======================================""")
-    cant = int(input("\nIngrese la Cantidad de Clientes a Mostrar : "))
-    
-    datos = list(g.clientes.items())[:cant]
-    for cliente,dato in datos:
-        print(
-            " ID : {} - RUN : {} - NOMBRE : {} - APELLIDO : {} - DIRECCION : {} - FONO : {} - CORREO : {} - MONTO CRÉDITO : {} - DEUDA : {} - TIPO : {} ".format(
-                cliente, dato[1], dato[2], dato[3], dato[4], dato[5], dato[6] , dato[9], dato[7], dato[8]))
-        print("-------------------------------------------------------------------------------------------------------------------------------------------------")
-    input("\n\n PRESIONE ENTER PARA CONTINUAR")
-"""Esta función me quedo super solida, es imposible que alguién me la 
-pueda botar, además, me quedo super bien validada"""
-def modifica(cadena, datos):
-    opm=input(f"DESEA MODIFICAR EL {cadena} : {datos} - [SI/NO] ")
-    if opm.lower() == "si":
-        nuevo=input(f"INGRESE {cadena} : ")
-        listanuevos.append(nuevo)
+            MUESTRA PARCIALMENTE LOS CLIENTES
+=======================================""")
+
+    while True:
+        cant = int(
+            v.leer_y_validar(
+                "\nIngrese la Cantidad de Clientes a Mostrar : ",
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        )
+
+        if cant <= 0:
+            print("\nPor favor, ingrese un número mayor a 0.")
+            continue
+        break
+
+    diccionario_clientes = g.obtener_clientes()
+
+    if not diccionario_clientes:
+        print("\nNo existen clientes registrados en el sistema todavía.")
+
     else:
-        listanuevos.append(datos)
+        clientes_parciales = list(diccionario_clientes.items())[:cant]
+
+        for id_cliente, cliente in clientes_parciales:
+            print(
+                f"ID: {id_cliente} - "
+                f"RUN: {cliente['run']} - "
+                f"NOMBRE: {cliente['nombre']} - "
+                f"APELLIDO: {cliente['apellido']} - "
+                f"DIRECCION: {cliente['direccion']} - "
+                f"FONO: {cliente['telefono']} - "
+                f"CORREO: {cliente['correo']} - "
+                f"MONTO CRÉDITO: {cliente['monto']} - "
+                f"DEUDA: {cliente['deuda']} - "
+                f"TIPO: {cliente['tipo']}"
+            )
+            print("-" * 150)
+
+    pausar()
+
+def modificar_tipo(tipo_actual):
+    tipos = {
+        101: "Plata",
+        102: "Oro",
+        103: "Platino"
+    }
+
+    opcion = v.leer_y_validar(
+        f"¿Desea modificar TIPO? ({tipo_actual}) [SI/NO]: ",
+        c.PATRON_SI_NO,
+        c.ERROR_SI_NO
+    )
+
+    if opcion.lower() == "no":
+        return tipo_actual
+
+    print("-" * 44)
+    print(" CODIGOS: 101 - Plata | 102 - Oro | 103 - Platino")
+    print("-" * 44)
+
+    while True:
+        codigo = int(
+            v.leer_y_validar(
+                "Ingrese Código de Tipo: ",
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        )
+
+        if codigo in tipos:
+            return tipos[codigo]
+
+        print("\nTipo fuera de rango.")
+
+def modifica(campo, valor_actual, patron=None, error="Entrada inválida."):
+    opcion = v.leer_y_validar(
+        f"¿Desea modificar {campo}? ({valor_actual}) [SI/NO]: ",
+        c.PATRON_SI_NO,
+        c.ERROR_SI_NO
+    )
+    if opcion.lower() == "si":
+        return v.leer_y_validar(
+            f"Ingrese nuevo {campo}: ",
+            patron,
+            error
+        )
+
+    return valor_actual
 
 def modificardatos():
-    
-    print("""===================================
-                MODULO MODIFICAR CLIENTE     
-            ===================================""")
-    mostrartodo()
-    mod = int(input("\n Ingrese valor de ID del Cliente que desea Modificar : "))
-    datos = g.buscar_cliente(mod)
-    
-    print(" ID         : {} ".format(datos[0]))
-    listanuevos.append(datos[0])
-    print(" RUN        : {} ".format(datos[1]))
-    listanuevos.append(datos[1])
+    print("\n" + "=" * 35)
+    print("      MÓDULO MODIFICAR CLIENTE")
+    print("=" * 35)
 
-    modifica("NOMBRE", datos[2])
-    modifica("APELLIDO",datos[3])
-    modifica("DIRECCIÓN",datos[4])
-    modifica("TELÉFONO",datos[5])
-    modifica("CORREO",datos[6])
-    modifica("DEUDA",datos[9])
-    modifica("MONTO DE CREDITO",datos[8])
-    #no tengo idea de como colocar de la línea 138 a la 153, dentro
-    #de la función modifica, no creo que se pueda. Así esta igual de buena
-    #total funciona
-    opm = input("DESEA MODIFICAR EL TIPO : {} - [SI/NO] ".format(datos[7]))
-    if opm.lower() == "si":
-        tipos = [
-            [101,"Plata"],[102,"Oro"],[103,"Platino"]
-        ]
-        print("--------------------------------------------")
-        for tipo in tipos:
-            print(
-                " CODIGO : {} - {}.".format(tipo[0], tipo[1]))
-        print("--------------------------------------------")
-        
-        tiponuevo = input("INGRESE EL TIPO : ")
-        listanuevos.append(tiponuevo)
-    else:
-        listanuevos.append(datos[7])
-    g.modificarDatos(mod,listanuevos)
-    
-"""La función eliminardatos, me quedo del one"""
-def eliminardatos():
-    print("""===================================
-                MODULO ELIMINAR CLIENTE      
-            ===================================""")
     mostrartodo()
-    elim = int(input("Ingrese valor de ID del Cliente que desea Eliminar : "))
-    g.eliminar_datos(elim)
+
+    id_cliente = int(
+        v.leer_y_validar(
+            "\nIngrese ID del cliente a modificar: ",
+            c.PATRON_NUMEROS,
+            c.ERROR_NUMEROS
+        )
+    )
+
+    cliente = g.buscar_cliente(id_cliente)
+
+    if cliente is None:
+        print("\n[X] Error: El ID ingresado no existe. [X]")
+        pausar()
+        return
+
+    print(f"""
+Cliente seleccionado:
+ID  : {cliente["id"]}
+RUN : {cliente["run"]}
+""")
+
+    nuevos_datos = {
+        "id": cliente["id"],
+        "run": cliente["run"],
+        "nombre": modifica(
+            "NOMBRE",
+            cliente["nombre"],
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
+        "apellido": modifica(
+            "APELLIDO",
+            cliente["apellido"],
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
+        "direccion": modifica(
+            "DIRECCIÓN",
+            cliente["direccion"]
+        ),
+        "telefono": modifica(
+            "TELÉFONO",
+            cliente["telefono"],
+            c.PATRON_TELEFONO,
+            c.ERROR_TELEFONO
+        ),
+        "correo": modifica(
+            "CORREO",
+            cliente["correo"],
+            c.PATRON_CORREO,
+            c.ERROR_CORREO
+        ),
+        "tipo": modificar_tipo(
+            cliente["tipo"]
+        ),
+        "monto": int(
+            modifica(
+                "MONTO CRÉDITO",
+                str(cliente["monto"]),
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        ),
+        "deuda": int(
+            modifica(
+                "DEUDA",
+                str(cliente["deuda"]),
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        )
+    }
+
+    if g.actualizar_cliente(id_cliente, nuevos_datos):
+        print("\n[✔] CLIENTE MODIFICADO CON ÉXITO [✔]")
+    else:
+        print("\n[X] ERROR AL ACTUALIZAR CLIENTE [X]")
+    pausar()
+
+
+def eliminardatos():
+    print("\n" + "=" * 35)
+    print("      MÓDULO ELIMINAR CLIENTE")
+    print("=" * 35)
+
+    mostrartodo()
+
+    elim = int(
+        v.leer_y_validar(
+            "\nIngrese valor de ID del Cliente que desea Eliminar: ",
+            c.PATRON_NUMEROS,
+            "El ID debe ser un número."
+        )
+    )
+
+    cliente = g.buscar_cliente(elim)
+
+    if cliente is None:
+        print("\n[X] Error: El ID ingresado no existe. [X]")
+        pausar()
+        return
+
+    print(
+        f"\nATENCIÓN: Va a eliminar al cliente: "
+        f"{cliente['nombre']} {cliente['apellido']} "
+        f"(ID: {cliente['id']})"
+    )
+
+    confirmar = v.leer_y_validar(
+        "¿ESTÁ SEGURO DE ELIMINAR ESTE CLIENTE? [SI/NO]: ",
+        c.PATRON_SI_NO,
+        c.ERROR_SI_NO
+    )
+
+    if confirmar.lower() == "si":
+        eliminado = g.eliminar_datos(elim)
+
+        if eliminado:
+            print("\n[✔] CLIENTE ELIMINADO EXITOSAMENTE [✔]")
+        else:
+            print("\n[X] Error al eliminar cliente [X]")
+
+    else:
+        print("\nOperación cancelada.")
+
+    pausar()

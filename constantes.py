@@ -1,0 +1,12 @@
+PATRON_NUMEROS = r"^\d+$"
+PATRON_RUN = r"^\d{7,8}[0-9kK]$"
+PATRON_NOMBRE = r"^[a-zA-ZáéíóúÁÉÍÓÚÑñ\s'-]+$"
+PATRON_CORREO = r"^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$"
+PATRON_TELEFONO = r"^\d{8,9}$"
+PATRON_SI_NO = r"^(si|no)$"
+
+ERROR_NUMEROS = "Debe ser número."
+ERROR_SOLO_LETRAS = "Solo letras."
+ERROR_CORREO = "Correo inválido."
+ERROR_TELEFONO = "Debe tener 8 o 9 números."
+ERROR_SI_NO = "Responda SI o NO."

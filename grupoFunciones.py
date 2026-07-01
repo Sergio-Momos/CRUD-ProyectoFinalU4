@@ -30,26 +30,51 @@ M E N Ú  U S U A R I O S
 3.-  Salir               
 ================================""")
 
-def agregar_cliente(codigo,run,nombre,apellido,direccion,fono,correo,tipo,monto,deuda):
-    try:
-        #no tengo la menor idea si el código lo almaceno de forma óptima
-        cliente = [codigo,run,nombre,apellido,direccion,fono,correo,tipo,monto,deuda]
-        clientes[codigo]=cliente
-    except:
+def agregar_cliente(codigo, run, nombre, apellido, direccion, fono, correo, tipo, monto, deuda):
+    if codigo in clientes:
         return False
-        raise
-    return True  
 
-def buscar_cliente(mod):
-    datos = clientes.get(mod)
-    print(datos) #Plasmar en el informe, como evitar que se caiga la aplicación con valor NONE
-    return datos
+    cliente = {
+        "id": codigo,
+        "run": run,
+        "nombre": nombre,
+        "apellido": apellido,
+        "direccion": direccion,
+        "telefono": fono,
+        "correo": correo,
+        "tipo": tipo,
+        "monto": monto,
+        "deuda": deuda
+    }
+    clientes[codigo] = cliente
+    return True
 
-def modificar_datos(mod,listanuevos):
-    clientes[mod]=listanuevos #siento que el código esta incompleto, que miedo
+def run_existe(run):
+    for cliente in clientes.values():
+        if cliente["run"] == run:
+            return True
+    return False
 
-def eliminar_datos(elim):
-    del clientes[elim] #siento que esto se va a caer, que miedo
+#getter: Retorna el dic de clientes
+def obtener_clientes():
+    return clientes
+
+def buscar_cliente(id):
+    return clientes.get(id)
+
+def actualizar_cliente(id_cliente, nuevos_datos):
+    if id_cliente not in clientes:
+        return False
+
+    clientes[id_cliente] = nuevos_datos
+    return True
+
+def eliminar_datos(id_cliente):
+    if id_cliente not in clientes:
+        return False
+
+    del clientes[id_cliente]
+    return True
 
 def ingreso_usuarios(codigo, username, clave, salt, nombre, apellidos, correo):
     usuarios[username] = {
