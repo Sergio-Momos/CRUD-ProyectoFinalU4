@@ -1,6 +1,6 @@
 import re
 
-
+#NO BORRAR NI MODIFICAR ESTA FUNCION EL 60% DEL CODIGO DEPENDE SOLAMENTE DE ESTO 
 def leer_y_validar(mensaje, patron=None, error="Entrada inválida."):
     while True:
         try:

@@ -2,30 +2,63 @@ import re
 import hashlib
 from getpass import getpass
 import secrets
+import msvcrt
+
+
+def password_input(prompt):
+    print(prompt, end="", flush=True)
+    password = ""
+
+    while True:
+        char = msvcrt.getch()
+
+        # Enter
+        if char in (b'\r', b'\n'):
+            print()
+            return password
+
+        # Ctrl+C o Ctrl+Z
+        elif char in (b'\x03', b'\x1a'):
+            print("\nNo use comandos de teclado")
+            return None
+
+        # Backspace
+        elif char == b'\x08':
+            if password:
+                password = password[:-1]
+                print("\b \b", end="", flush=True)
+
+        # Teclas especiales (flechas, F1, etc.)
+        elif char in (b'\x00', b'\xe0'):
+            msvcrt.getch()
+
+        else:
+            try:
+                letra = char.decode("utf-8")
+                password += letra
+                print("*", end="", flush=True)
+            except UnicodeDecodeError:
+                continue
 
 def validar_longitud(password):
     if len(password) > 15:
         return "La contraseña debe tener un maximo de 15 caracteres."
     return None
 
-
 def validar_mayuscula(password):
     if not re.search(r"[A-Z]", password):
         return "Debe tener una mayúscula."
     return None
-
 
 def validar_minuscula(password):
     if not re.search(r"[a-z]", password):
         return "Debe tener una minúscula."
     return None
 
-
 def validar_numero(password):
     if not re.search(r"\d", password):
         return "Debe tener un número."
     return None
-
 
 def validar_especial(password):
     patron = r"[ñÑ!@#$%^&*(),.?\":{}|<>_\-+=/\\[\];']"
@@ -40,7 +73,6 @@ def encriptar_password(password, salt):
     combinado = password + salt
     return hashlib.sha256(combinado.encode()).hexdigest()
 
-
 def validar_contra():
     validaciones = [
         validar_longitud,
@@ -51,21 +83,24 @@ def validar_contra():
     ]
 
     while True:
-        try:
-            password1 = getpass("Ingrese contraseña: ")
-            password2 = getpass("Confirme contraseña: ")
-            if password1 != password2:
-                print("Las contraseñas no coinciden.")
-                continue
-            for validar in validaciones:
-                error = validar(password1)
-                if error:
-                    print(error)
-                    break
-            else:
-                salt = generar_salt()
-                hash_pw = encriptar_password(password1, salt)
-                return hash_pw, salt
-        except KeyboardInterrupt, EOFError:
-            print("No use comandos de teclado")
+        password1 = password_input("Ingrese contraseña: ")
+        if password1 is None:
             continue
+
+        password2 = password_input("Confirme contraseña: ")
+        if password2 is None:
+            continue
+
+        if password1 != password2:
+            print("Las contraseñas no coinciden.")
+            continue
+
+        for validar in validaciones:
+            error = validar(password1)
+            if error:
+                print(error)
+                break
+        else:
+            salt = generar_salt()
+            hash_pw = encriptar_password(password1, salt)
+            return hash_pw, salt
