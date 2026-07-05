@@ -86,3 +86,9 @@ def ingreso_usuarios(codigo, username, clave, salt, nombre, apellidos, correo):
         "apellidos": apellidos,
         "correo": correo
     }
+
+def correo_existe(correo):
+    for usuario in usuarios.values():
+        if usuario["correo"] == correo:
+            return True
+    return False
