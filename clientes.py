@@ -1,6 +1,7 @@
 import grupoFunciones as g
 import constantes as c
-import validacion_CL as v
+import validaciones as v
+import auditoria as audit
 
 idcliente = 0
 
@@ -89,7 +90,7 @@ def pedir_monto():
     return int(v.leer_y_validar("INGRESE MONTO CRÉDITO: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
 
 
-def ing_cliente():
+def ing_cliente(usuario):
     print("\n" + "=" * 33 + "\n     INGRESAR DATOS CLIENTE\n" + "=" * 33)
 
     run = pedir_run()
@@ -107,11 +108,16 @@ def ing_cliente():
         tipo, monto, 0
     )
 
-    print("\n[✔] INCORPORACIÓN EXITOSA [✔]" if exito else "\n[X] INCORPORACIÓN FALLIDA [X]")
+    if exito:
+        print("\n[✔] INCORPORACIÓN EXITOSA [✔]")
+        audit.registrar(usuario, "CREAR_CLIENTE", f"id={idcliente}, run={run}")
+    else:
+        print("\n[X] INCORPORACIÓN FALLIDA [X]")
+        audit.registrar_error(usuario, "CREAR_CLIENTE", f"id={idcliente} ya existía")
     pausar()
 
 
-def mostrar():
+def mostrar(usuario):
     opciones = {
         1: mostrartodo,
         2: mostraruno,
@@ -125,13 +131,13 @@ def mostrar():
             print("\nVolviendo al menú principal...")
             break
         elif op2 in opciones:
-            opciones[op2]()
+            opciones[op2](usuario)
         else:
             print("\nOpción fuera de rango (1-4)")
             pausar()
 
 
-def mostrartodo():
+def mostrartodo(usuario=None):
     print("=================================\nMUESTRA DE TODOS LOS CLIENTES\n=================================")
 
     clientes = g.obtener_clientes()
@@ -141,10 +147,12 @@ def mostrartodo():
     else:
         for id_cliente, cliente in clientes.items():
             imprimir_cliente(id_cliente, cliente)
+    if usuario:
+        audit.registrar(usuario, "CONSULTAR_CLIENTES", "mostrar todo")
     pausar()
 
 
-def mostraruno():
+def mostraruno(usuario=None):
     print("=================================\n            MUESTRA DE DATOS PARTICULAR\n=================================")
 
     idcliente_buscado = pedir_id("\nIngrese el ID del Cliente que desea mostrar: ")
@@ -154,10 +162,12 @@ def mostraruno():
         print("\nError: El ID ingresado no corresponde a ningún cliente registrado.")
     else:
         imprimir_cliente(idcliente_buscado, cliente)
+    if usuario:
+        audit.registrar(usuario, "CONSULTAR_CLIENTE", f"id={idcliente_buscado}")
     pausar()
 
 
-def mostrarparcial():
+def mostrarparcial(usuario=None):
     print("=======================================\n            MUESTRA PARCIALMENTE LOS CLIENTES\n=======================================")
 
     while True:
@@ -174,6 +184,8 @@ def mostrarparcial():
     else:
         for id_cliente, cliente in list(diccionario_clientes.items())[:cant]:
             imprimir_cliente(id_cliente, cliente)
+    if usuario:
+        audit.registrar(usuario, "CONSULTAR_CLIENTES", f"mostrar parcial cant={cant}")
     pausar()
 
 
@@ -188,10 +200,10 @@ def modifica(campo, valor_actual, patron=None, error="Entrada inválida."):
     return valor_actual
 
 
-def modificardatos():
+def modificardatos(usuario):
     print("\n" + "=" * 35 + "\n      MÓDULO MODIFICAR CLIENTE\n" + "=" * 35)
 
-    mostrartodo()
+    mostrartodo(usuario)
 
     id_cliente = pedir_id("\nIngrese ID del cliente a modificar: ", c.ERROR_NUMEROS)
     cliente = g.buscar_cliente(id_cliente)
@@ -218,15 +230,17 @@ def modificardatos():
 
     if g.actualizar_cliente(id_cliente, nuevos_datos):
         print("\n[✔] CLIENTE MODIFICADO CON ÉXITO [✔]")
+        audit.registrar(usuario, "MODIFICAR_CLIENTE", f"id={id_cliente}")
     else:
         print("\n[X] ERROR AL ACTUALIZAR CLIENTE [X]")
+        audit.registrar_error(usuario, "MODIFICAR_CLIENTE", f"id={id_cliente} no se pudo actualizar")
     pausar()
 
 
-def eliminardatos():
+def eliminardatos(usuario):
     print("\n" + "=" * 35 + "\n      MÓDULO ELIMINAR CLIENTE\n" + "=" * 35)
 
-    mostrartodo()
+    mostrartodo(usuario)
 
     elim = pedir_id("\nIngrese valor de ID del Cliente que desea Eliminar: ")
     cliente = g.buscar_cliente(elim)
@@ -243,8 +257,11 @@ def eliminardatos():
     if confirmar.lower() == "si":
         if g.eliminar_datos(elim):
             print("\n[✔] CLIENTE ELIMINADO EXITOSAMENTE [✔]")
+            audit.registrar(usuario, "ELIMINAR_CLIENTE", f"id={elim}")
         else:
             print("\n[X] Error al eliminar cliente [X]")
+            audit.registrar_error(usuario, "ELIMINAR_CLIENTE", f"id={elim} no se pudo eliminar")
     else:
         print("\nOperación cancelada.")
+        audit.registrar(usuario, "ELIMINAR_CLIENTE_CANCELADO", f"id={elim}")
     pausar()
