@@ -1,16 +1,55 @@
 import re
+import sys
 import hashlib
-from getpass import getpass
 import secrets
-import msvcrt
+
+# msvcrt solo existe en Windows; termios/tty solo en sistemas POSIX
+# (Linux/Mac). Ambos son librerías ESTÁNDAR de Python (no requieren
+# 'pip install'), por lo que no se agrega ninguna dependencia externa.
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import termios
+    import tty
 
 
-def password_input(prompt):
+def _leer_tecla():
+    """
+    Lee un solo carácter desde el teclado sin necesidad de presionar Enter,
+    de forma multiplataforma. Retorna el carácter como bytes, o b'' si
+    fue una tecla especial que debe ignorarse (flechas, F1-F12, etc.).
+    """
+    if sys.platform == "win32":
+        char = msvcrt.getch()
+        if char in (b'\x00', b'\xe0'):  # teclas especiales (flechas, F1, etc.)
+            msvcrt.getch()
+            return b''
+        return char
+    else:
+        fd = sys.stdin.fileno()
+        config_original = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            char = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, config_original)
+        return char.encode("utf-8", errors="ignore")
+
+
+def contra_input(prompt):
+    """
+    Solicita una contraseña mostrando '*' por cada carácter ingresado,
+    sin dejar la contraseña visible en pantalla. Funciona igual en
+    Windows, Linux y macOS (usa msvcrt o termios/tty según corresponda).
+    """
     print(prompt, end="", flush=True)
     password = ""
 
     while True:
-        char = msvcrt.getch()
+        char = _leer_tecla()
+
+        if not char:
+            continue
 
         # Enter
         if char in (b'\r', b'\n'):
@@ -22,27 +61,29 @@ def password_input(prompt):
             print("\nNo use comandos de teclado")
             return None
 
-        # Backspace
-        elif char == b'\x08':
+        # Backspace (Windows envía \x08, Unix/Linux/Mac suele enviar \x7f)
+        elif char in (b'\x08', b'\x7f'):
             if password:
                 password = password[:-1]
                 print("\b \b", end="", flush=True)
 
-        # Teclas especiales (flechas, F1, etc.)
-        elif char in (b'\x00', b'\xe0'):
-            msvcrt.getch()
-
         else:
             try:
                 letra = char.decode("utf-8")
-                password += letra
-                print("*", end="", flush=True)
+                if letra.isprintable():
+                    password += letra
+                    print("*", end="", flush=True)
             except UnicodeDecodeError:
                 continue
 
+
 def validar_longitud(password):
+    # Se agregó también un mínimo (antes solo existía el máximo),
+    # para no permitir contraseñas demasiado cortas como "Aa1!".
+    if len(password) < 8:
+        return "La contraseña debe tener un mínimo de 8 caracteres."
     if len(password) > 15:
-        return "La contraseña debe tener un maximo de 15 caracteres."
+        return "La contraseña debe tener un máximo de 15 caracteres."
     return None
 
 def validar_mayuscula(password):
@@ -74,20 +115,14 @@ def encriptar_password(password, salt):
     return hashlib.sha256(combinado.encode()).hexdigest()
 
 def validar_contra():
-    validaciones = [
-        validar_longitud,
-        validar_mayuscula,
-        validar_minuscula,
-        validar_numero,
-        validar_especial
-    ]
+    validaciones = [validar_longitud, validar_mayuscula, validar_minuscula, validar_numero, validar_especial]
 
     while True:
-        password1 = password_input("Ingrese contraseña: ")
+        password1 = contra_input("Ingrese contraseña: ")
         if password1 is None:
             continue
 
-        password2 = password_input("Confirme contraseña: ")
+        password2 = contra_input("Confirme contraseña: ")
         if password2 is None:
             continue
 
