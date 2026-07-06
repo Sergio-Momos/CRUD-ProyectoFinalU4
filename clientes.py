@@ -3,7 +3,6 @@ import constantes as c
 import validaciones as v
 import auditoria as audit
 
-idcliente = 0
 
 def pausar():
     input("PRESIONE ENTER PARA CONTINUAR...")
@@ -24,18 +23,28 @@ def imprimir_cliente(id_cliente, cliente):
     print(" - ".join(f"{etiqueta}: {valor}" for etiqueta, valor in campos))
     print("-" * 150)
 
+def buscar_run(mensaje):
+    while True:
+        run = v.leer_y_validar(mensaje + " (o 0 para cancelar): ", c.PATRON_RUN + r"|^0$", c.ERROR_RUN)
+        
+        if run == "0":
+            return None
+        
+        if not v.validar_rut_chileno(run):
+            print("\nRUN inválido.")
+            continue
 
-def pedir_id(mensaje, error="El ID debe ser numérico."):
-    return int(v.leer_y_validar(mensaje, c.PATRON_NUMEROS, error))
+        run_formateado = f"{run[:-1]}-{run[-1].upper()}"
 
+        if g.run_existe(run_formateado):
+            return run_formateado
+        
+        else:
+            print("\nEse RUN no está registrado.")
 
 def pedir_run():
     while True:
-        run = v.leer_y_validar(
-            "RUN (Sin puntos ni guion, ej: 12345678K): ",
-            c.PATRON_RUN,
-            "Formato incorrecto."
-        )
+        run = v.leer_y_validar("RUN (Sin puntos ni guion, ej: 12345678K): ", c.PATRON_RUN, c.ERROR_RUN)
 
         if not v.validar_rut_chileno(run):
             print("\nRUN inválido.")
@@ -49,7 +58,6 @@ def pedir_run():
 
         return run_formateado
 
-
 def pedir_datos_cliente():
     return {
         "nombre": v.leer_y_validar("INGRESE NOMBRE   : ", c.PATRON_NOMBRE, c.ERROR_SOLO_LETRAS),
@@ -59,7 +67,6 @@ def pedir_datos_cliente():
         "correo": v.leer_y_validar("INGRESE CORREO   : ", c.PATRON_CORREO, c.ERROR_CORREO),
     }
 
-
 def seleccionar_tipo(tipo_actual=None):
     """
     Pide un código de tipo de cliente y devuelve su nombre.
@@ -67,11 +74,7 @@ def seleccionar_tipo(tipo_actual=None):
     si la respuesta es "no", devuelve el tipo actual sin más preguntas.
     """
     if tipo_actual is not None:
-        opcion = v.leer_y_validar(
-            f"¿Desea modificar TIPO? ({tipo_actual}) [SI/NO]: ",
-            c.PATRON_SI_NO,
-            c.ERROR_SI_NO
-        )
+        opcion = v.leer_y_validar(f"¿Desea modificar TIPO? ({tipo_actual}) [SI/NO]: ", c.PATRON_SI_NO, c.ERROR_SI_NO)
         if opcion.lower() == "no":
             return tipo_actual
 
@@ -80,7 +83,7 @@ def seleccionar_tipo(tipo_actual=None):
     print("-" * 44)
 
     while True:
-        codigo = pedir_id("Ingrese Código de Tipo: ", c.ERROR_NUMEROS)
+        codigo = int(v.leer_y_validar("Ingrese codigo de los tipos mostrados: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
         if codigo in c.TIPOS:
             return c.TIPOS[codigo]
         print("\nTipo fuera de rango.")
@@ -98,8 +101,7 @@ def ing_cliente(usuario):
     tipo = seleccionar_tipo()
     monto = pedir_monto()
 
-    global idcliente
-    idcliente += 1
+    idcliente = g.generar_id_cliente()
 
     exito = g.agregar_cliente(
         idcliente, run,
@@ -125,7 +127,7 @@ def mostrar(usuario):
     }
     while True:
         g.menumostrar()
-        op2 = pedir_id("INGRESE OPCIÓN: ", c.ERROR_NUMEROS)
+        op2 = int(v.leer_y_validar("Ingrese opcion: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
 
         if op2 == 4:
             print("\nVolviendo al menú principal...")
@@ -155,15 +157,15 @@ def mostrartodo(usuario=None):
 def mostraruno(usuario=None):
     print("=================================\n            MUESTRA DE DATOS PARTICULAR\n=================================")
 
-    idcliente_buscado = pedir_id("\nIngrese el ID del Cliente que desea mostrar: ")
-    cliente = g.buscar_cliente(idcliente_buscado)
+    runcliente_buscado = buscar_run("\nIngrese el RUN del Cliente que desea mostrar (Sin puntos ni guion, ej: 12345678K): ")
+    cliente = g.buscar_cliente_por_run(runcliente_buscado)
 
     if cliente is None:
-        print("\nError: El ID ingresado no corresponde a ningún cliente registrado.")
+        print("\nError: El RUN ingresado no corresponde a ningún cliente registrado.")
     else:
-        imprimir_cliente(idcliente_buscado, cliente)
-    if usuario:
-        audit.registrar(usuario, "CONSULTAR_CLIENTE", f"id={idcliente_buscado}")
+        imprimir_cliente(cliente["id"], cliente)
+        if usuario:
+            audit.registrar(usuario, "CONSULTAR_CLIENTE", f"id={cliente['id']}")
     pausar()
 
 
@@ -171,7 +173,7 @@ def mostrarparcial(usuario=None):
     print("=======================================\n            MUESTRA PARCIALMENTE LOS CLIENTES\n=======================================")
 
     while True:
-        cant = pedir_id("\nIngrese la Cantidad de Clientes a Mostrar : ", c.ERROR_NUMEROS)
+        cant = int(v.leer_y_validar("Ingrese la cantidad de clientes a mostrar: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
         if cant <= 0:
             print("\nPor favor, ingrese un número mayor a 0.")
             continue
@@ -190,11 +192,7 @@ def mostrarparcial(usuario=None):
 
 
 def modifica(campo, valor_actual, patron=None, error="Entrada inválida."):
-    opcion = v.leer_y_validar(
-        f"¿Desea modificar {campo}? ({valor_actual}) [SI/NO]: ",
-        c.PATRON_SI_NO,
-        c.ERROR_SI_NO
-    )
+    opcion = v.leer_y_validar(f"¿Desea modificar {campo}? ({valor_actual}) [SI/NO]: ", c.PATRON_SI_NO, c.ERROR_SI_NO)
     if opcion.lower() == "si":
         return v.leer_y_validar(f"Ingrese nuevo {campo}: ", patron, error)
     return valor_actual
@@ -205,11 +203,13 @@ def modificardatos(usuario):
 
     mostrartodo(usuario)
 
-    id_cliente = pedir_id("\nIngrese ID del cliente a modificar: ", c.ERROR_NUMEROS)
-    cliente = g.buscar_cliente(id_cliente)
-
+    run_buscado = buscar_run("\nIngrese RUN del cliente a modificar: ")
+    cliente = g.buscar_cliente_por_run(run_buscado)
+    
+    id_cliente = cliente["id"]
+    
     if cliente is None:
-        print("\n[X] Error: El ID ingresado no existe. [X]")
+        print("\n[X] Error: El RUN ingresado no existe. [X]")
         pausar()
         return
 
@@ -242,14 +242,15 @@ def eliminardatos(usuario):
 
     mostrartodo(usuario)
 
-    elim = pedir_id("\nIngrese valor de ID del Cliente que desea Eliminar: ")
-    cliente = g.buscar_cliente(elim)
+    run_buscado = buscar_run("\nIngrese valor de RUN del Cliente que desea Eliminar (Sin puntos ni guion, ej: 12345678K): ")
+    cliente = g.buscar_cliente_por_run(run_buscado)
 
     if cliente is None:
-        print("\n[X] Error: El ID ingresado no existe. [X]")
+        print("\n[X] Error: El RUN ingresado no existe. [X]")
         pausar()
         return
 
+    elim = cliente["id"]   # <- el ID real, para pasarlo a eliminar_datos
     print(f"\nATENCIÓN: Va a eliminar al cliente: {cliente['nombre']} {cliente['apellido']} (ID: {cliente['id']})")
 
     confirmar = v.leer_y_validar("¿ESTÁ SEGURO DE ELIMINAR ESTE CLIENTE? [SI/NO]: ", c.PATRON_SI_NO, c.ERROR_SI_NO)
@@ -257,11 +258,11 @@ def eliminardatos(usuario):
     if confirmar.lower() == "si":
         if g.eliminar_datos(elim):
             print("\n[✔] CLIENTE ELIMINADO EXITOSAMENTE [✔]")
-            audit.registrar(usuario, "ELIMINAR_CLIENTE", f"id={elim}")
+            audit.registrar(usuario, "ELIMINAR_CLIENTE", f"id={cliente['id']}")
         else:
             print("\n[X] Error al eliminar cliente [X]")
-            audit.registrar_error(usuario, "ELIMINAR_CLIENTE", f"id={elim} no se pudo eliminar")
+            audit.registrar_error(usuario, "ELIMINAR_CLIENTE", f"id={cliente['id']} no se pudo eliminar")
     else:
         print("\nOperación cancelada.")
-        audit.registrar(usuario, "ELIMINAR_CLIENTE_CANCELADO", f"id={elim}")
+        audit.registrar(usuario, "ELIMINAR_CLIENTE_CANCELADO", f"id={cliente['id']}")
     pausar()

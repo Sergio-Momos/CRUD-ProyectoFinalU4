@@ -30,6 +30,16 @@ M E N Ú  U S U A R I O S
 3.-  Salir               
 ================================""")
 
+from datetime import datetime
+import random
+
+def generar_id_cliente():
+    while True:
+        nuevo_id = f"CL{datetime.now():%y%m%d}{random.randint(1000,9999)}"
+
+        if nuevo_id not in clientes:
+            return nuevo_id
+
 def agregar_cliente(codigo, run, nombre, apellido, direccion, fono, correo, tipo, monto, deuda):
     if codigo in clientes:
         return False
@@ -59,8 +69,11 @@ def run_existe(run):
 def obtener_clientes():
     return clientes
 
-def buscar_cliente(id):
-    return clientes.get(id)
+def buscar_cliente_por_run(run):
+    for cliente in clientes.values():
+        if cliente["run"] == run:
+            return cliente
+    return None
 
 def actualizar_cliente(id_cliente, nuevos_datos):
     if id_cliente not in clientes:

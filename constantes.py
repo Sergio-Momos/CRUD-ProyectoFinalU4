@@ -14,6 +14,7 @@ ERROR_CORREO = "Correo inválido."
 ERROR_TELEFONO = "Debe tener 8 o 9 números."
 ERROR_SI_NO = "Responda SI o NO."
 ERROR_USER = "Solo letras, números y guión bajo."
+ERROR_RUN = "Formato incorrecto"
 
 TIPOS = {
     101: "Plata",
