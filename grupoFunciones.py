@@ -1,5 +1,8 @@
+from datetime import datetime
+import secrets
 clientes = {}
 usuarios = {}
+
 def menuprincipal():
     print("""================================
 M E N Ú  P R I N C I P A L   
@@ -30,14 +33,18 @@ M E N Ú  U S U A R I O S
 3.-  Salir               
 ================================""")
 
-from datetime import datetime
-import random
-
 def generar_id_cliente():
     while True:
-        nuevo_id = f"CL{datetime.now():%y%m%d}{random.randint(1000,9999)}"
+        nuevo_id = f"CL{datetime.now():%y%m%d}{secrets.randbelow(9000) + 1000}"
 
         if nuevo_id not in clientes:
+            return nuevo_id
+
+def generar_id_usuario():
+    while True:
+        nuevo_id = f"US{datetime.now():%y%m%d}{secrets.randbelow(9000) + 1000}"
+
+        if nuevo_id not in usuarios:
             return nuevo_id
 
 def agregar_cliente(codigo, run, nombre, apellido, direccion, fono, correo, tipo, monto, deuda):

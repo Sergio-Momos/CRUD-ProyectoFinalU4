@@ -11,10 +11,7 @@ logger.setLevel(logging.INFO)
 
 # Evita duplicar handlers si el módulo se importa más de una vez.
 if not logger.handlers:
-    formato = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    formato = logging.Formatter( fmt="%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
     handler.setFormatter(formato)
     logger.addHandler(handler)

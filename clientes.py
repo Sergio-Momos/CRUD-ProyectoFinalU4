@@ -88,10 +88,8 @@ def seleccionar_tipo(tipo_actual=None):
             return c.TIPOS[codigo]
         print("\nTipo fuera de rango.")
 
-
 def pedir_monto():
     return int(v.leer_y_validar("INGRESE MONTO CRÉDITO: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
-
 
 def ing_cliente(usuario):
     print("\n" + "=" * 33 + "\n     INGRESAR DATOS CLIENTE\n" + "=" * 33)
@@ -118,7 +116,6 @@ def ing_cliente(usuario):
         audit.registrar_error(usuario, "CREAR_CLIENTE", f"id={idcliente} ya existía")
     pausar()
 
-
 def mostrar(usuario):
     opciones = {
         1: mostrartodo,
@@ -138,7 +135,6 @@ def mostrar(usuario):
             print("\nOpción fuera de rango (1-4)")
             pausar()
 
-
 def mostrartodo(usuario=None):
     print("=================================\nMUESTRA DE TODOS LOS CLIENTES\n=================================")
 
@@ -153,7 +149,6 @@ def mostrartodo(usuario=None):
         audit.registrar(usuario, "CONSULTAR_CLIENTES", "mostrar todo")
     pausar()
 
-
 def mostraruno(usuario=None):
     print("=================================\n            MUESTRA DE DATOS PARTICULAR\n=================================")
 
@@ -167,7 +162,6 @@ def mostraruno(usuario=None):
         if usuario:
             audit.registrar(usuario, "CONSULTAR_CLIENTE", f"id={cliente['id']}")
     pausar()
-
 
 def mostrarparcial(usuario=None):
     print("=======================================\n            MUESTRA PARCIALMENTE LOS CLIENTES\n=======================================")
@@ -190,13 +184,11 @@ def mostrarparcial(usuario=None):
         audit.registrar(usuario, "CONSULTAR_CLIENTES", f"mostrar parcial cant={cant}")
     pausar()
 
-
 def modifica(campo, valor_actual, patron=None, error="Entrada inválida."):
     opcion = v.leer_y_validar(f"¿Desea modificar {campo}? ({valor_actual}) [SI/NO]: ", c.PATRON_SI_NO, c.ERROR_SI_NO)
     if opcion.lower() == "si":
         return v.leer_y_validar(f"Ingrese nuevo {campo}: ", patron, error)
     return valor_actual
-
 
 def modificardatos(usuario):
     print("\n" + "=" * 35 + "\n      MÓDULO MODIFICAR CLIENTE\n" + "=" * 35)
@@ -235,7 +227,6 @@ def modificardatos(usuario):
         print("\n[X] ERROR AL ACTUALIZAR CLIENTE [X]")
         audit.registrar_error(usuario, "MODIFICAR_CLIENTE", f"id={id_cliente} no se pudo actualizar")
     pausar()
-
 
 def eliminardatos(usuario):
     print("\n" + "=" * 35 + "\n      MÓDULO ELIMINAR CLIENTE\n" + "=" * 35)

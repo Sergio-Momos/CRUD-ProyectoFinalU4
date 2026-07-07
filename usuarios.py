@@ -1,13 +1,9 @@
-import re
 import grupoFunciones as g
 import pass_validacion as seguridad
 import auditoria as audit
 from getpass import getpass
 import validaciones as v
 import constantes as c
-idusuario = 0
-
-
 
 def ing_usuario():
     username = v.leer_y_validar("Username: ", c.PATRON_USER, c.ERROR_USER)
@@ -37,7 +33,6 @@ def ing_usuario():
 
     correo = v.leer_y_validar("Correo: ", c.PATRON_CORREO, c.ERROR_SOLO_LETRAS)
 
-
     if not correo:
         return
 
@@ -46,7 +41,7 @@ def ing_usuario():
         audit.registrar_error(username, "REGISTRO_USUARIO", "correo ya existente")
         return
 
-    codigo = len(g.usuarios) + 1
+    codigo = g.generar_id_usuario()
     g.ingreso_usuarios(
         codigo,
         username,
@@ -65,7 +60,7 @@ def login():
         username = v.leer_y_validar("Username: ", c.PATRON_USER, c.ERROR_USER)
         if not username: return None
 
-        password = getpass("Contraseña: ")
+        password = seguridad.contra_input("Ingrese contraseña: ")
         if not password: return None
 
         usuario = g.usuarios.get(username)
