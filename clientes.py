@@ -88,8 +88,22 @@ def seleccionar_tipo(tipo_actual=None):
             return c.TIPOS[codigo]
         print("\nTipo fuera de rango.")
 
-def pedir_monto():
-    return int(v.leer_y_validar("INGRESE MONTO CRÉDITO: ", c.PATRON_NUMEROS, c.ERROR_NUMEROS))
+def pedir_monto(tipo):
+    limite = c.LIMITE_CREDITO[tipo]
+
+    while True:
+        monto = int(
+            v.leer_y_validar(
+                f"INGRESE MONTO CRÉDITO (Máximo {limite}): ",
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        )
+
+        if monto <= limite:
+            return monto
+
+        print(f"\nEl monto máximo para un cliente {tipo} es ${limite}.")
 
 def ing_cliente(usuario):
     print("\n" + "=" * 33 + "\n     INGRESAR DATOS CLIENTE\n" + "=" * 33)
@@ -97,7 +111,7 @@ def ing_cliente(usuario):
     run = pedir_run()
     datos = pedir_datos_cliente()
     tipo = seleccionar_tipo()
-    monto = pedir_monto()
+    monto = pedir_monto(tipo)
 
     idcliente = g.generar_id_cliente()
 
@@ -190,6 +204,28 @@ def modifica(campo, valor_actual, patron=None, error="Entrada inválida."):
         return v.leer_y_validar(f"Ingrese nuevo {campo}: ", patron, error)
     return valor_actual
 
+def validar_credito(tipo, monto):
+    limite = c.LIMITE_CREDITO[tipo]
+
+    if monto <= limite:
+        return monto
+
+    print(
+        f"\nEl monto ${monto} supera el máximo permitido para un cliente "
+        f"{tipo} (${limite})."
+    )
+
+    opcion = v.leer_y_validar(
+        "¿Desea ajustar el crédito al máximo permitido? [SI/NO]: ",
+        c.PATRON_SI_NO,
+        c.ERROR_SI_NO
+    )
+
+    if opcion.lower() == "si":
+        return limite
+
+    return 0
+
 def modificardatos(usuario):
     print("\n" + "=" * 35 + "\n      MÓDULO MODIFICAR CLIENTE\n" + "=" * 35)
 
@@ -197,27 +233,92 @@ def modificardatos(usuario):
 
     run_buscado = buscar_run("\nIngrese RUN del cliente a modificar: ")
     cliente = g.buscar_cliente_por_run(run_buscado)
-    
-    id_cliente = cliente["id"]
-    
+
     if cliente is None:
         print("\n[X] Error: El RUN ingresado no existe. [X]")
         pausar()
         return
 
+    id_cliente = cliente["id"]
+
     print(f"\nCliente seleccionado:\nID  : {cliente['id']}\nRUN : {cliente['run']}\n")
+
+    # Modificar tipo primero
+    nuevo_tipo = seleccionar_tipo(cliente["tipo"])
+
+    # Modificar monto
+    nuevo_monto = int(
+        modifica(
+            "MONTO CRÉDITO",
+            str(cliente["monto"]),
+            c.PATRON_NUMEROS,
+            c.ERROR_NUMEROS
+        )
+    )
+
+    nuevo_monto = validar_credito(
+    nuevo_tipo,
+    nuevo_monto
+)
+    
+    # Validar límite según el tipo
+    limite = c.LIMITE_CREDITO[nuevo_tipo]
+
+    if nuevo_monto > limite:
+        print(
+            f"\nEl monto ingresado (${nuevo_monto}) supera el máximo permitido "
+            f"para un cliente {nuevo_tipo} (${limite})."
+        )
+
+        opcion = v.leer_y_validar(
+            "¿Desea ajustar el crédito al máximo permitido? [SI/NO]: ",
+            c.PATRON_SI_NO,
+            c.ERROR_SI_NO
+        )
+
+        if opcion.lower() == "si":
+            nuevo_monto = limite
+        else:
+            nuevo_monto = 0
 
     nuevos_datos = {
         "id": cliente["id"],
         "run": cliente["run"],
-        "nombre": modifica("NOMBRE", cliente["nombre"], c.PATRON_NOMBRE, c.ERROR_SOLO_LETRAS),
-        "apellido": modifica("APELLIDO", cliente["apellido"], c.PATRON_NOMBRE, c.ERROR_SOLO_LETRAS),
+        "nombre": modifica(
+            "NOMBRE",
+            cliente["nombre"],
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
+        "apellido": modifica(
+            "APELLIDO",
+            cliente["apellido"],
+            c.PATRON_NOMBRE,
+            c.ERROR_SOLO_LETRAS
+        ),
         "direccion": modifica("DIRECCIÓN", cliente["direccion"]),
-        "telefono": modifica("TELÉFONO", cliente["telefono"], c.PATRON_TELEFONO, c.ERROR_TELEFONO),
-        "correo": modifica("CORREO", cliente["correo"], c.PATRON_CORREO, c.ERROR_CORREO),
-        "tipo": seleccionar_tipo(cliente["tipo"]),
-        "monto": int(modifica("MONTO CRÉDITO", str(cliente["monto"]), c.PATRON_NUMEROS, c.ERROR_NUMEROS)),
-        "deuda": int(modifica("DEUDA", str(cliente["deuda"]), c.PATRON_NUMEROS, c.ERROR_NUMEROS)),
+        "telefono": modifica(
+            "TELÉFONO",
+            cliente["telefono"],
+            c.PATRON_TELEFONO,
+            c.ERROR_TELEFONO
+        ),
+        "correo": modifica(
+            "CORREO",
+            cliente["correo"],
+            c.PATRON_CORREO,
+            c.ERROR_CORREO
+        ),
+        "tipo": nuevo_tipo,
+        "monto": nuevo_monto,
+        "deuda": int(
+            modifica(
+                "DEUDA",
+                str(cliente["deuda"]),
+                c.PATRON_NUMEROS,
+                c.ERROR_NUMEROS
+            )
+        ),
     }
 
     if g.actualizar_cliente(id_cliente, nuevos_datos):
@@ -225,7 +326,12 @@ def modificardatos(usuario):
         audit.registrar(usuario, "MODIFICAR_CLIENTE", f"id={id_cliente}")
     else:
         print("\n[X] ERROR AL ACTUALIZAR CLIENTE [X]")
-        audit.registrar_error(usuario, "MODIFICAR_CLIENTE", f"id={id_cliente} no se pudo actualizar")
+        audit.registrar_error(
+            usuario,
+            "MODIFICAR_CLIENTE",
+            f"id={id_cliente} no se pudo actualizar"
+        )
+
     pausar()
 
 def eliminardatos(usuario):

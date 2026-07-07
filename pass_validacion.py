@@ -13,7 +13,7 @@ else:
     import tty
 
 
-def _leer_tecla():
+def leer_tecla():
     """
     Lee un solo carácter desde el teclado sin necesidad de presionar Enter,
     de forma multiplataforma. Retorna el carácter como bytes, o b'' si
@@ -35,46 +35,48 @@ def _leer_tecla():
             termios.tcsetattr(fd, termios.TCSADRAIN, config_original)
         return char.encode("utf-8", errors="ignore")
 
+def procesar_tecla(char, contra):
+    if not char:
+        return contra, False
+
+    if char in (b'\r', b'\n'):
+        return contra, True
+
+    if char in (b'\x03', b'\x1a'):
+        return None, True
+
+    if char in (b'\x08', b'\x7f'):
+        if contra:
+            contra = contra[:-1]
+            print("\b \b", end="", flush=True)
+        return contra, False
+
+    try:
+        letra = char.decode("utf-8")
+    except UnicodeDecodeError:
+        return contra, False
+
+    if letra.isprintable():
+        contra += letra
+        print("*", end="", flush=True)
+
+    return contra, False
 
 def contra_input(prompt):
-    """
-    Solicita una contraseña mostrando '*' por cada carácter ingresado,
-    sin dejar la contraseña visible en pantalla. Funciona igual en
-    Windows, Linux y macOS (usa msvcrt o termios/tty según corresponda).
-    """
     print(prompt, end="", flush=True)
-    password = ""
+    contra = ""
 
     while True:
-        char = _leer_tecla()
+        char = leer_tecla()
+        contra, terminar = procesar_tecla(char, contra)
 
-        if not char:
-            continue
-
-        # Enter
-        if char in (b'\r', b'\n'):
-            print()
-            return password
-
-        # Ctrl+C o Ctrl+Z
-        elif char in (b'\x03', b'\x1a'):
+        if contra is None:
             print("\nNo use comandos de teclado")
             return None
 
-        # Backspace (Windows envía \x08, Unix/Linux/Mac suele enviar \x7f)
-        elif char in (b'\x08', b'\x7f'):
-            if password:
-                password = password[:-1]
-                print("\b \b", end="", flush=True)
-
-        else:
-            try:
-                letra = char.decode("utf-8")
-                if letra.isprintable():
-                    password += letra
-                    print("*", end="", flush=True)
-            except UnicodeDecodeError:
-                continue
+        if terminar:
+            print()
+            return contra
 
 
 def validar_longitud(password):

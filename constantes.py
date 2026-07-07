@@ -21,3 +21,9 @@ TIPOS = {
     102: "Oro",
     103: "Platino"
 }
+
+LIMITE_CREDITO = {
+    "Plata": 5000,
+    "Oro": 10000,
+    "Platino": 15000
+}
